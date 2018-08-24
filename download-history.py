@@ -6,17 +6,17 @@ import time
 import sys
 
 targetDir = os.path.dirname(os.path.abspath(__file__))
+# start_time = time.time()
 
 
 def Schedule(blocknum, blocksize, totalsize):
     speed = (blocknum * blocksize) / (time.time() - start_time)
-    # speed_str = " Speed: %.2f" % speed
     speed_str = " Speed: %s" % format_size(speed)
     recv_size = blocknum * blocksize
 
     # 设置下载进度条
     f = sys.stdout
-    pervent = recv_size / totalsize
+    pervent = min(recv_size / totalsize, 1.0)
     percent_str = "%.2f%%" % (pervent * 100)
     n = round(pervent * 50)
     s = ('#' * n).ljust(50, '-')
@@ -87,18 +87,21 @@ def downloadPic(web):
                 print("we have owned it!")
             else:
                 urllib.request.urlretrieve(guanwang + link[6:],
-                                           destFile(link, nowdate + ' ' + title), Schedule)
-                print("we get it")
+                                           destFile(link, nowdate + ' ' + title),
+                                           Schedule)
+                print('100.00%')
 
 
 if __name__ == '__main__':
-    start_time = time.time()
     print(time.strftime("%H:%M:%S") + ' ' + '程序正在启动...')
     run = True
     while run:
         try:
+            print(time.strftime("%H:%M:%S") + ' ' + '正在获取图片列表...')
             webList = getWebList(7)
+            print(time.strftime("%H:%M:%S") + ' ' + '即将下载图片...')
             for web in webList:
+                start_time = time.time()
                 downloadPic(web)
             run = False
         except urllib.error.URLError as e:
