@@ -1,7 +1,10 @@
 import urllib.request
+import urllib.error
 import re
 import os
 import datetime
+import time
+import sys
 
 
 targetDir = os.path.dirname(os.path.abspath(__file__))
@@ -14,51 +17,64 @@ def destFile(path, nowdate):
     return t
 
 
+def titleTrans(title):
+    title = title[1:(len(title) - 9)].replace(':', ' ')
+    title = title.replace('\\', ' ')
+    title = title.replace('/', ' ')
+    title = title.replace('*', ' ')
+    title = title.replace('?', ' ')
+    title = title.replace('<', ' ')
+    title = title.replace('>', ' ')
+    title = title.replace('|', ' ')
+    title = title.replace('"', ' ')
+    return title.strip()
+
+
+def getWebList(count=1):
+    hostname = "https://apod.nasa.gov/apod/archivepix.html"
+    req = urllib.request.Request(hostname)
+    webpage = urllib.request.urlopen(req)
+    htmlText = str(webpage.read())
+    webList = []
+    for i in range(count):
+        match = re.search(r'(ap([0-9]*).html)', htmlText)
+        htmlText = htmlText[match.end():]
+        webList.append(match.group())
+    return webList
+
+
+def downloadPic(web):
+    nowdate = web[2:-5]
+    hostname = "https://apod.nasa.gov/apod/" + web
+    req = urllib.request.Request(hostname)
+    webpage = urllib.request.urlopen(req)
+    contentBytes = webpage.read()
+    guanwang = r'https://apod.nasa.gov/apod/'
+    for link, t in set(re.findall(r'(href="image[^\s]*?(jpg|png|gif))', str(contentBytes))):
+        for title, t in set(re.findall(r'(- (.*)title>)', str(contentBytes))):
+            title = titleTrans(title)
+            print(nowdate + title)
+            if os.path.exists(nowdate + ' ' + title + '.jpg'):
+                print("we have owned it!")
+            else:
+                urllib.request.urlretrieve(guanwang + link[6:],
+                                           destFile(link, nowdate + title))
+                print("we get it")
+
+
 if __name__ == '__main__':
     run = True
-    error = True
-    i = 1
-    while(run):
-        nowdate = (datetime.datetime.now()+datetime.timedelta(days=-i)).strftime('%Y%m%d')[2:]
-        print(nowdate)
+    while run:
         try:
-            hostname = "https://apod.nasa.gov/apod/ap"+nowdate+".html"
-            req = urllib.request.Request(hostname)
-            webpage = urllib.request.urlopen(req)
-            contentBytes = webpage.read()
-            # print(contentBytes)
-            guanwang = r'https://apod.nasa.gov/apod/'
-            notget = True
-            # print(targetDir)
-            for link, t in set(re.findall(r'(href="image[^\s]*?(jpg|png|gif))', str(contentBytes))):
-                # print(link[6:])
-                # print(contentBytes)
-                for title, t in set(re.findall(r'(- (.*)title>)', str(contentBytes))):
-                    # print(type(title))
-                    title = title[1:(len(title)-9)].replace(':', ' ')
-                    title = title.replace('\\', ' ')
-                    title = title.replace('/', ' ')
-                    title = title.replace('*', ' ')
-                    title = title.replace('?', ' ')
-                    title = title.replace('<', ' ')
-                    title = title.replace('>', ' ')
-                    title = title.replace('|', ' ')
-                    title = title.replace('"', ' ')
-                    print(nowdate+title)
-                    if os.path.exists(nowdate+title + '.jpg'):
-                        print("we have owned it!")
-                    else:
-                        urllib.request.urlretrieve(guanwang+link[6:],
-                                                   destFile(link, nowdate+title))
-                        print("we get it")
-            i = i + 1
-            # print(i)
-            if i > 8:
-                run = False
-
-        except:
-            if error:
-                print("something wrong")
-                print("check your internet and wait a minute......")
-                # error = False
-    print(1)
+            webList = getWebList(7)
+            for web in webList:
+                downloadPic(web)
+            run = False
+        except urllib.error.URLError as e:
+            print(time.strftime("%H:%M:%S")+' '+str(e.reason))
+            print("check your internet and wait a minute......")
+            time.sleep(5)
+        except Exception as e:
+            with open('error.log', 'a') as f:
+                f.write(time.asctime(time.localtime(time.time()))+' '+repr(e)+'\n')
+            run = False
