@@ -6,7 +6,6 @@ import time
 import sys
 
 targetDir = os.path.dirname(os.path.abspath(__file__))
-# start_time = time.time()
 
 
 def Schedule(blocknum, blocksize, totalsize):
@@ -92,32 +91,43 @@ def downloadPic(web):
                 print('100.00%')
 
 
+def testInternetConnect(errorInfo):
+    try:
+        urllib.request.urlopen(urllib.request.Request("http://www.baidu.com"))
+        print(errorInfo)
+        with open('error.log', 'a') as f:
+            f.write(errorInfo)
+        return False
+    except urllib.error.URLError as urle:
+        print(time.strftime("%H:%M:%S") + ' ' + str(urle.reason))
+        print("check your internet and wait a minute......")
+        time.sleep(10)
+        return True
+
+
 if __name__ == '__main__':
+    # TODO: 下载完成后下载项可能重复进行
     print(time.strftime("%H:%M:%S") + ' ' + '程序正在启动...')
     webList = []
+    webListCount = 7
     runGetWebList = True
     runDownload = False
+
     while runGetWebList:
         try:
             print(time.strftime("%H:%M:%S") + ' ' + '正在获取图片列表...')
-            webList = getWebList(7)
+            webList = getWebList(webListCount)
             print(time.strftime("%H:%M:%S") + ' ' + '即将下载图片...')
             runGetWebList = False
             runDownload = True
         except urllib.error.URLError as e:
-            try:
-                urllib.request.Request("http://www.baidu.com")
-                with open('error.log', 'a') as f:
-                    f.write(time.asctime(time.localtime(time.time())) + ' ' + '目录域名错误' + '\n')
-                runGetWebList = False
-            except urllib.error.URLError:
-                print(time.strftime("%H:%M:%S") + ' ' + str(e.reason))
-                print("check your internet and wait a minute......")
-                time.sleep(10)
+            runGetWebList = testInternetConnect(time.asctime(time.localtime(time.time()))
+                                                + ' ' + '目录域名错误' + '\n')
         except Exception as e:
             with open('error.log', 'a') as f:
                 f.write(time.asctime(time.localtime(time.time()))+' '+repr(e)+'\n')
             runGetWebList = False
+
     while runDownload:
         for web in webList:
             try:
@@ -126,16 +136,8 @@ if __name__ == '__main__':
             except urllib.error.URLError as e:
                 runGetPic = True
                 while runGetPic:
-                    try:
-                        urllib.request.Request("http://www.baidu.com")
-                        with open('error.log', 'a') as f:
-                            f.write(time.asctime(time.localtime(time.time())) + " https://apod.nasa.gov/apod/"
-                                    + web + '图片域名错误' + '\n')
-                        runGetPic = False
-                    except urllib.error.URLError:
-                        print(time.strftime("%H:%M:%S") + ' ' + str(e.reason))
-                        print("check your internet and wait a minute......")
-                        time.sleep(10)
+                    testInternetConnect(time.asctime(time.localtime(time.time())) + " https://apod.nasa.gov/apod/"
+                                        + web + '图片域名错误' + '\n')
             except Exception as e:
                 with open('error.log', 'a') as f:
                     f.write(time.asctime(time.localtime(time.time())) + ' ' + repr(e) + '\n')
