@@ -106,7 +106,7 @@ def testInternetConnect(errorInfo):
 
 
 if __name__ == '__main__':
-    # TODO: 下载完成后下载项可能重复进行
+    # TODO: 修复下载完成后下载项可能重复进行的问题
     print(time.strftime("%H:%M:%S") + ' ' + '程序正在启动...')
     webList = []
     webListCount = 7
@@ -134,10 +134,8 @@ if __name__ == '__main__':
                 start_time = time.time()
                 downloadPic(web)
             except urllib.error.URLError as e:
-                runGetPic = True
-                while runGetPic:
-                    testInternetConnect(time.asctime(time.localtime(time.time())) + " https://apod.nasa.gov/apod/"
-                                        + web + '图片域名错误' + '\n')
+                testInternetConnect(time.asctime(time.localtime(time.time())) + " https://apod.nasa.gov/apod/"
+                                    + web + '图片域名错误' + '\n')
             except Exception as e:
                 with open('error.log', 'a') as f:
                     f.write(time.asctime(time.localtime(time.time())) + ' ' + repr(e) + '\n')
